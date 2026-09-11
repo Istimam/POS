@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANAGERIUM POS - Restaurant POS & Floor Layout System</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts for crisp typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="theme-light">
+    <!-- TOP NAVIGATION BAR -->
+    <header class="top-bar">
+        <div class="brand-section">
+            <div class="brand-logo">
+                <i data-lucide="store"></i>
+            </div>
+            <div class="brand-info">
+                <h1 class="brand-title">MANAGERIUM <span class="badge-tag">RESTAURANT POS</span></h1>
+                <div class="counter-meta">
+                    <span><i data-lucide="monitor"></i> Counter 001</span>
+                    <span class="dot">â€¢</span>
+                    <span><i data-lucide="user"></i> Nasrullah</span>
+                    <span class="dot">â€¢</span>
+                    <span><i data-lucide="map-pin"></i> Dhanmondi Outlet</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DAYPART STATUS BANNER -->
+        <div class="daypart-banner" id="daypartBanner">
+            <div class="daypart-icon-box" id="daypartIconBox">
+                <i data-lucide="sun" id="daypartIcon"></i>
+            </div>
+            <div class="daypart-details">
+                <div class="daypart-header">
+                    <span class="daypart-label">ACTIVE DAYPART</span>
+                    <span class="daypart-name" id="daypartName">Morning Breakfast</span>
+                    <span class="time-range" id="daypartTimeRange">(06:00 AM - 11:00 AM)</span>
+                </div>
+                <div class="daypart-subtext">
+                    <span id="daypartDesc">Showing auto-sequenced breakfast menu & morning specials</span>
+                </div>
+            </div>
+            <div class="daypart-actions">
+                <button class="btn-override" id="btnOverride" onclick="toggleOverride()">
+                    <i data-lucide="eye"></i>
+                    <span id="overrideText">Show All Items</span>
+                </button>
+                <div class="clock-display" id="clockDisplay">08:30:15 AM</div>
+            </div>
+        </div>
+
+        <!-- HEADER ACTIONS -->
+        <div class="header-right-actions">
+            <button class="btn-header btn-backoffice" onclick="openBackofficeModal()">
+                <i data-lucide="sliders"></i>
+                <span>âš™ï¸ Back-Office Config</span>
+            </button>
+            <div class="order-type-pills">
+                <button class="pill-btn active" data-type="Dine-In" onclick="setOrderType(this)">
+                    <i data-lucide="utensils"></i> Dine-In
+                </button>
+                <button class="pill-btn" data-type="Takeaway" onclick="setOrderType(this)">
+                    <i data-lucide="shopping-bag"></i> Takeaway
+                </button>
+                <button class="pill-btn" data-type="Delivery" onclick="setOrderType(this)">
+                    <i data-lucide="bike"></i> Delivery
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="pos-container">
+
+        <!-- FAR LEFT FUNCTION NAVIGATION BAR -->
+        <nav class="function-sidebar">
+            <button class="nav-icon-btn active" id="navBtnSales" title="Sales Screen" onclick="switchMainView('sales')">
+                <i data-lucide="shopping-cart"></i>
+                <span>Sales</span>
+            </button>
+            <button class="nav-icon-btn" id="navBtnTables" title="Floor Layout & Tables" onclick="switchMainView('tables')">
+                <i data-lucide="grid"></i>
+                <span>Tables</span>
+            </button>
+            <button class="nav-icon-btn" id="navBtnHistory" title="Open Orders & History" onclick="openHistoryModal()">
+                <i data-lucide="receipt"></i>
+                <span>Orders</span>
+            </button>
+            <button class="nav-icon-btn highlight-sim" title="Daypart Fast-Switch" onclick="cycleSimulatedDaypart()">
+                <i data-lucide="clock"></i>
+                <span>Simulate Time</span>
+            </button>
+            <div class="nav-spacer"></div>
+            <button class="nav-icon-btn danger" title="Lock Screen" onclick="showToast('Screen locked')">
+                <i data-lucide="lock"></i>
+                <span>Lock</span>
+            </button>
+        </nav>
+
+        <!-- VIEW 1: SALES POS SCREEN VIEW -->
+        <div class="main-view-container active" id="viewSales">
+            <!-- LEFT CATEGORY RAIL -->
+            <aside class="category-rail">
+                <div class="category-rail-header">
+                    <span>CATEGORIES</span>
+                    <span class="seq-tag" id="seqModeTag">Custom Sequenced</span>
+                </div>
+                
+                <div class="category-list" id="categoryList">
+                    <!-- Dynamically Populated Categories -->
+                </div>
+            </aside>
+
+            <!-- CENTER PRODUCT MATRIX AREA -->
+            <section class="products-section">
+                <!-- TOP BAR SEARCH & FILTER CONTROL -->
+                <div class="product-top-bar">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="searchInput" placeholder="Search dish, beverage, or item code (e.g. Paratha, Biryani, 101)..." oninput="handleSearch()">
+                        <button class="clear-search" id="clearSearchBtn" onclick="clearSearch()" style="display:none;">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+
+                    <div class="daypart-quick-filter">
+                        <span class="filter-lbl">Quick Filter:</span>
+                        <div class="filter-chips-list" id="quickFilterChipsList" style="display: flex; gap: 6px; align-items: center; overflow-x: auto;">
+                            <!-- Dynamically populated quick filter chips -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- POPULAR NOW / TOP-SELLERS STRIP -->
+                <div class="bestsellers-strip" id="bestsellersStrip">
+                    <div class="strip-header">
+                        <div class="strip-title">
+                            <i data-lucide="flame" class="icon-fire"></i>
+                            <span>POPULAR NOW</span>
+                            <span class="strip-subtitle" id="bestsellerSub">Top moving items right now</span>
+                        </div>
+                        <span class="auto-sort-badge"><i data-lucide="sparkles"></i> Velocity Sorted</span>
+                    </div>
+                    <div class="bestsellers-carousel" id="bestsellersList">
+                        <!-- Dynamically populated top items -->
+                    </div>
+                </div>
+
+                <!-- MAIN GRID HEADER -->
+                <div class="grid-header">
+                    <div class="grid-title-area">
+                        <h2 class="category-title" id="currentCategoryTitle">All Category Items</h2>
+                        <span class="item-count-badge" id="itemCountBadge">0 Items</span>
+                    </div>
+
+                    <div class="grid-sort-indicator">
+                        <i data-lucide="arrow-down-up"></i>
+                        <span>Sequence Rule: </span>
+                        <strong id="sortRuleText">Back-Office Custom Sequence</strong>
+                    </div>
+                </div>
+
+                <!-- PRODUCT GRID -->
+                <div class="product-grid" id="productGrid">
+                    <!-- Dynamically populated product cards -->
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW 2: FULLY FUNCTIONAL FLOOR LAYOUT & TABLE BUILDER SYSTEM -->
+        <div class="main-view-container" id="viewTables">
+            <section class="floor-layout-view">
+                <!-- FLOOR HEADER CONTROL BAR -->
+                <div class="floor-top-bar">
+                    <div class="floor-title-group">
+                        <h2 class="floor-heading">Floor Layout & Table Plan</h2>
+                        <span class="floor-subheading" id="floorSubheadingText">REAL-TIME TABLE STATUS MONITORING & MAPPING</span>
+                    </div>
+
+                    <!-- FLOOR SELECTOR TABS -->
+                    <div class="floor-tabs" id="floorTabsList">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <div class="floor-actions">
+                        <button class="btn-floor-action btn-toggle-edit" id="btnToggleEditMode" onclick="toggleEditMode()">
+                            <i data-lucide="edit-3"></i> <span id="editModeBtnText">âœï¸ Edit Layout Mode: OFF</span>
+                        </button>
+                        <button class="btn-floor-action btn-add-floor" onclick="openCreateFloorModal()">
+                            <i data-lucide="plus"></i> + New Floor
+                        </button>
+                        <button class="btn-floor-action btn-setup-table" onclick="openSetupTableModal()">
+                        </button>
+                        
+                        <div class="table-status-pills">
+                            <span class="status-pill pill-all active" onclick="filterTablesByStatus('ALL', this)">ALL</span>
+                            <span class="status-pill pill-avail" onclick="filterTablesByStatus('AVAILABLE', this)">ðŸŸ¢ AVAILABLE</span>
+                            <span class="status-pill pill-res" onclick="filterTablesByStatus('RESERVED', this)">ðŸŸ¡ RESERVED</span>
+                            <span class="status-pill pill-occ" onclick="filterTablesByStatus('OCCUPIED', this)">ðŸ”´ OCCUPIED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EDIT MODE BANNER INDICATOR -->
+                <div class="edit-mode-indicator-bar" id="editModeBanner" style="display: none;">
+                    <i data-lucide="info"></i>
+                    <span>âœï¸ EDIT LAYOUT MODE IS ACTIVE: Drag tables to organize your exact floor plan. Click "Done Editing" when finished.</span>
+                    <button class="btn-done-edit" style="background-color: #3b82f6; margin-right: 8px;" onclick="openEditFloorModal()">Edit Floor Area</button>
+                    <button class="btn-done-edit" onclick="toggleEditMode()">Done Editing</button>
+                </div>
+
+                <!-- INTERACTIVE FLOOR CANVAS AREA -->
+                <div class="floor-canvas-wrapper" id="floorCanvasWrapper">
+                    <div class="canvas-grid-background" id="floorCanvas">
+                        <!-- Drag-and-drop tables -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- RIGHT INVOICE / ORDER CART PANEL (GLOBAL TO ALL VIEWS) -->
+        <aside class="invoice-panel">
+            <!-- CART HEADER -->
+            <div class="invoice-header">
+                <div class="invoice-meta">
+                    <div class="invoice-no-badge">
+                        <i data-lucide="file-text"></i>
+                        <span id="invoiceNo">INV-18260905-0042</span>
+                    </div>
+                    <div class="table-selector" onclick="switchMainView('tables')">
+                        <i data-lucide="layout"></i>
+                        <span id="selectedTableText">Table: T-04 (Ground)</span>
+                        <i data-lucide="chevron-down"></i>
+                    </div>
+                </div>
+                <button class="btn-clear-cart" onclick="clearCart()" title="Clear Invoice">
+                    <i data-lucide="trash-2"></i> CLEAR
+                </button>
+            </div>
+
+            <!-- CUSTOMER & SERVICE SELECTOR -->
+            <div class="cart-sub-bar">
+                <div class="cust-info">
+                    <i data-lucide="user-check"></i>
+                    <span>Walk-in Customer</span>
+                </div>
+                <div class="waiter-info">
+                    <i data-lucide="user"></i>
+                    <span>Server: Karim</span>
+                </div>
+            </div>
+
+            <!-- CART ITEMS LIST CONTAINER -->
+            <div class="cart-items-wrapper">
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 45%;">Item Name</th>
+                            <th style="width: 25%; text-align: center;">Qty</th>
+                            <th style="width: 30%; text-align: right;">Total (à§³)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartTableBody">
+                        <!-- Dynamic Cart Rows -->
+                    </tbody>
+                </table>
+                <div class="empty-cart-state" id="emptyCartState">
+                    <i data-lucide="shopping-bag"></i>
+                    <p>No items added to order</p>
+                    <small>Tap any available food card to add to invoice</small>
+                </div>
+            </div>
+
+            <!-- CART BILL SUMMARY -->
+            <div class="cart-summary-section">
+                <div class="summary-line">
+                    <span class="sum-lbl">Subtotal</span>
+                    <span class="sum-val" id="valSubtotal">à§³0.00</span>
+                </div>
+                
+                <div class="summary-line interactive">
+                    <span class="sum-lbl">Discount</span>
+                    <div class="discount-quick-pills">
+                        <button class="disc-pill" onclick="applyDiscount(0)">0%</button>
+                        <button class="disc-pill" onclick="applyDiscount(5)">5%</button>
+                        <button class="disc-pill" onclick="applyDiscount(10)">10%</button>
+                        <button class="disc-pill" onclick="applyCustomDiscount()">Custom</button>
+                    </div>
+                    <span class="sum-val text-discount" id="valDiscount">-à§³0.00</span>
+                </div>
+
+                <div class="summary-line">
+                    <span class="sum-lbl">SD & VAT (5%)</span>
+                    <span class="sum-val" id="valVat">à§³0.00</span>
+                </div>
+
+                <div class="summary-line grand-total-line">
+                    <span class="grand-lbl">Payable Total</span>
+                    <span class="grand-val" id="valPayable">à§³0.00</span>
+                </div>
+            </div>
+
+            <!-- FOOTER ACTION BUTTONS -->
+            <div class="cart-footer-actions">
+                <button class="btn-pos btn-kot-later" onclick="processPayLater()" title="Send KOT & hold order for table">
+                    <i data-lucide="clock"></i>
+                    <span>KOT & PAY LATER</span>
+                </button>
+
+                <button class="btn-pos btn-pay" id="btnPay" onclick="openPaymentModal()">
+                    <i data-lucide="credit-card"></i>
+                    <span>PAY FIRST (à§³<span id="btnPayAmount">0</span>)</span>
+                </button>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- TABLE DETAILS / ACTION MODAL (FOR AVAILABLE & RESERVED TABLES) -->
+    <div class="modal-overlay" id="tableActionModal">
+        <div class="modal-container table-action-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="layout"></i>
+                    <div>
+                        <h2 id="tblActionTitle">Table T-01 Options</h2>
+                        <p id="tblActionSubtitle">Floor: Ground Floor â€¢ Capacity: 4 Chairs â€¢ Status: ðŸŸ¢ AVAILABLE</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeTableActionModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body" id="tblActionBody">
+                <!-- Dynamic Content based on status -->
+            </div>
+
+            <div class="modal-footer" id="tblActionFooter">
+                <!-- Dynamic Footer Buttons -->
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLE RESERVATION MODAL WITH TIME SCHEDULE -->
+    <div class="modal-overlay" id="reservationModal">
+        <div class="modal-container res-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="calendar"></i>
+                    <div>
+                        <h2 id="resModalTitle">Reserve Table T-01</h2>
+                        <p>Set customer details and scheduled reservation time</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeReservationModal()"><i data-lucide="x"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label class="form-lbl">Customer Name:</label>
+                        <input type="text" class="form-input" id="resCustName" placeholder="e.g. Rahat Ahmed, Mr. Tanvir...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-lbl">Phone Number:</label>
+                        <input type="text" class="form-input" id="resCustPhone" placeholder="e.g. 01711223344">
+                    </div>
+                </div>
+
+                <div class="form-row-grid" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label class="form-lbl">Reservation Date:</label>
+                        <input type="date" class="form-input" id="resDate">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-lbl">Reservation Time:</label>
+                        <input type="time" class="form-input" id="resTime" value="19:30">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 12px;">
+                    <label class="form-lbl">Party Size / Guests Count:</label>
+                    <input type="number" class="form-input" id="resGuests" value="4" min="1" max="20">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeReservationModal()">Cancel</button>
+                <button class="btn-pri" onclick="saveTableReservation()"><i data-lucide="check"></i> Confirm Table Reservation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLE ORDER SUMMARY & ADD MORE ITEMS MODAL -->
+    <div class="modal-overlay" id="tableSummaryModal">
+        <div class="modal-container table-summary-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="utensils"></i>
+                    <div>
+                        <h2 id="summaryTableTitle">Table T-03 Order Summary</h2>
+                        <p id="summaryTableSubtitle">Active Invoice: INV-18260905-0042 â€¢ Status: ðŸ”´ OCCUPIED</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeTableSummaryModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="summary-order-box">
+                    <table class="bo-table">
+                        <thead>
+                            <tr>
+                                <th>Ordered Item</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Unit Price</th>
+                                <th style="text-align: right;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryItemsTableBody">
+                            <!-- Dynamic ordered items -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="summary-totals-bar">
+                    <div class="summary-stat">
+                        <span>Total Items:</span>
+                        <strong id="summaryTotalItems">0</strong>
+                    </div>
+                    <div class="summary-stat">
+                        <span>Total Payable:</span>
+                        <strong class="text-primary-val" id="summaryTotalPayable">à§³0.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeTableSummaryModal()">Close</button>
+                <button class="btn-pri btn-add-more" onclick="addMoreItemsToTableOrder()">
+                    <i data-lucide="pencil"></i> Add / Delete Items
+                </button>
+                <button class="btn-pri btn-complete-pay" onclick="settleTableBillFromSummary()">
+                    <i data-lucide="credit-card"></i> Settle &amp; Pay Bill
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPEN ORDERS / HISTORY MODAL -->
+    <div class="modal-overlay" id="historyModal">
+        <div class="modal-container history-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="receipt"></i>
+                    <div>
+                        <h2>Open Invoices & Order History</h2>
+                        <p>Reload open Pay-Later orders to add items or process payment</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeHistoryModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <table class="bo-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Table</th>
+                            <th>Order Type</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Payable</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- Dynamic open/paid orders -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- BACK-OFFICE DAYPART & SEQUENCE CONFIGURATION MODAL -->
+    <div class="modal-overlay" id="backofficeModal">
+        <div class="modal-container backoffice-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="sliders"></i>
+                    <div>
+                        <h2>Back-Office Sequence, Inventory & Daypart Manager</h2>
+                        <p>Configure menu sequence (Drag & Drop), item enable/disable toggles, stock & dayparts</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeBackofficeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="bo-tabs">
+                <button class="bo-tab-btn active" onclick="switchBoTab('tab-category-seq', this)">
+                    <i data-lucide="list-ordered"></i> 1. Category Sequence (Drag & Drop)
+                </button>
+                <button class="bo-tab-btn" onclick="switchBoTab('tab-item-seq', this)">
+                    <i data-lucide="grid"></i> 2. Item Sequence, Pins & Enable/Disable
+                </button>
+                <button class="bo-tab-btn" onclick="switchBoTab('tab-dayparts', this)">
+                    <i data-lucide="clock"></i> 3. Daypart Schedules & Category Assignment
+                </button>
+            </div>
+
+            <div class="modal-body bo-body">
+
+                <!-- TAB 1: CATEGORY SEQUENCE EDITOR -->
+                <div class="bo-tab-content active" id="tab-category-seq">
+                    <div class="bo-card-intro">
+                        <h3><i data-lucide="move"></i> Drag & Drop Category Re-Ordering</h3>
+                        <p>Drag rows using the handle or click â¬†ï¸ Up / â¬‡ï¸ Down to re-organize categories. Changes update live in the POS sales screen!</p>
+                    </div>
+
+                    <div class="bo-seq-container">
+                        <table class="bo-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;">Drag</th>
+                                    <th style="width: 10%;">Seq #</th>
+                                    <th style="width: 35%;">Category Name</th>
+                                    <th style="width: 25%;">Assigned Dayparts</th>
+                                    <th style="width: 25%; text-align: center;">Re-Order Controls</th>
+                                </tr>
+                            </thead>
+                            <tbody id="boCategoryTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2: ITEM SEQUENCE, PIN & ENABLE/DISABLE TOGGLE -->
+                <div class="bo-tab-content" id="tab-item-seq">
+                    <div class="bo-grid-2col">
+                        <div class="bo-box">
+                            <div class="bo-box-header">
+                                <h4>Select Category:</h4>
+                            </div>
+                            <div class="bo-cat-select-list" id="boCatSelectList">
+                                <!-- Category selection list -->
+                            </div>
+                        </div>
+
+                        <div class="bo-box">
+                            <div class="bo-box-header" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h4 id="boSelectedCatTitle">Selected: Paratha & Breads</h4>
+                                    <small>Enable/disable items, set stock & pinning</small>
+                                </div>
+                                <select class="form-select-sm" id="boSortModeSelect" onchange="changeSortMode(this.value)">
+                                    <option value="custom">ðŸ“Œ Custom Sequence</option>
+                                    <option value="hybrid">âš¡ Hybrid (Pinned + Velocity)</option>
+                                    <option value="bestseller">ðŸ”¥ Velocity Auto-Sort</option>
+                                    <option value="alphabetical">ðŸ”¤ Alphabetical (A-Z)</option>
+                                </select>
+                            </div>
+
+                            <div class="bo-item-editor-list" id="boItemEditorList">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: DAYPART SCHEDULE MANAGER -->
+                <div class="bo-tab-content" id="tab-dayparts">
+                    <div class="bo-card-intro" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3><i data-lucide="sun-medium"></i> Daypart Time Windows & Category Assignment</h3>
+                            <p>Create new dayparts, set time windows, and assign category visibility.</p>
+                        </div>
+                        <button class="btn-pri" style="padding: 6px 14px; font-size: 12.5px;" onclick="openAddDaypartModal()">
+                            <i data-lucide="plus"></i> + Add Daypart
+                        </button>
+                    </div>
+
+                    <div style="overflow-y: auto; flex: 1;">
+                        <table class="bo-table">
+                            <thead>
+                                <tr>
+                                    <th>Daypart Name</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Active Days</th>
+                                    <th>Assigned Categories</th>
+                                    <th>Status</th>
+                                    <th style="text-align: center;">Actions & Category Assignment</th>
+                                </tr>
+                            </thead>
+                            <tbody id="boDaypartsTableBody">
+                                <!-- Dynamic Daypart rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeBackofficeModal()">Cancel</button>
+                <button class="btn-pri" onclick="saveBackofficeConfig()"><i data-lucide="check-circle"></i> Save & Apply POS Sequence</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD DAYPART MODAL -->
+    <div class="modal-overlay" id="addDaypartModal">
+        <div class="modal-container daypart-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="clock"></i>
+                    <div>
+                        <h2>Create New Daypart Profile</h2>
+                        <p>Set time range, active days of week, and assign category visibility</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeAddDaypartModal()"><i data-lucide="x"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label class="form-lbl">Daypart Name:</label>
+                        <input type="text" class="form-input" id="dpFormName" placeholder="e.g. Afternoon Tea & Snacks, Late Night...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-lbl">Icon / Emoji:</label>
+                        <input type="text" class="form-input" id="dpFormEmoji" value="â˜•" placeholder="e.g. ðŸŒ…, ðŸš, â˜•">
+                    </div>
+                </div>
+
+                <div class="form-row-grid" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label class="form-lbl">Start Time:</label>
+                        <input type="time" class="form-input" id="dpFormStart" value="16:00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-lbl">End Time:</label>
+                        <input type="time" class="form-input" id="dpFormEnd" value="19:00">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 12px;">
+                    <label class="form-lbl">Assign Categories to this Daypart:</label>
+                    <div class="checkbox-grid" id="dpFormCategoryCheckboxes">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeAddDaypartModal()">Cancel</button>
+                <button class="btn-pri" onclick="saveNewDaypart()"><i data-lucide="check"></i> Create Daypart & Assign Categories</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT DAYPART / QUICK FILTER MODAL -->
+    <div class="modal-overlay" id="editDaypartModal">
+        <div class="modal-container daypart-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="edit"></i>
+                    <div>
+                        <h2 id="editDpModalTitle">Edit Quick Filter & Category Assignment</h2>
+                        <p>Modify name, schedule, and assign/unassign categories for this filter</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeEditDaypartModal()"><i data-lucide="x"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label class="form-lbl">Filter / Daypart Name:</label>
+                        <input type="text" class="form-input" id="editDpFormName" placeholder="e.g. Morning Breakfast, Evening Grill...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-lbl">Icon / Emoji:</label>
+                        <input type="text" class="form-input" id="editDpFormEmoji" placeholder="e.g. ðŸŒ…, ðŸš, â˜•">
+                    </div>
+                </div>
+
+                <div class="form-row-grid" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label class="form-lbl">Start Time:</label>
+                        <input type="time" class="form-input" id="editDpFormStart">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-lbl">End Time:</label>
+                        <input type="time" class="form-input" id="editDpFormEnd">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 12px;">
+                    <label class="form-lbl">Assigned Categories to this Quick Filter:</label>
+                    <div class="checkbox-grid" id="editDpFormCategoryCheckboxes">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeEditDaypartModal()">Cancel</button>
+                <button class="btn-pri" onclick="saveEditDaypart()"><i data-lucide="check"></i> Save Filter & Category Assignment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETUP TABLE & FLOOR MODAL -->
+    <div class="modal-overlay" id="setupTableModal">
+        <div class="modal-container table-setup-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="layout"></i>
+                    <div>
+                        <h2>Table Setup & Capacity Builder</h2>
+                        <p>Configure table name, floor, shape, seating capacity, and status</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeSetupTableModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label class="form-lbl">Table Name / Number:</label>
+                        <input type="text" class="form-input" id="tblFormName" placeholder="e.g. T-01, VIP-2, Garden-A">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-lbl">Assign Floor:</label>
+                        <select class="form-select" id="tblFormFloor">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row-grid" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label class="form-lbl">Table Shape:</label>
+                        <select class="form-select" id="tblFormShape">
+                            <option value="round">â­• Round / Circle Table</option>
+                            <option value="square">â¬› Square Table</option>
+                            <option value="rectangle">â–­ Rectangle Dining Table</option>
+                            <option value="oval">ðŸ›‹ï¸ Oval / Booth Sofa</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-lbl">Seating Capacity (Chairs):</label>
+                        <select class="form-select" id="tblFormCapacity">
+                            <option value="2">2 Chairs (Couple)</option>
+                            <option value="4" selected>4 Chairs (Standard)</option>
+                            <option value="6">6 Chairs (Family)</option>
+                            <option value="8">8 Chairs (Large Group)</option>
+                            <option value="12">12 Chairs (Banquet)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 12px;">
+                    <label class="form-lbl">Initial Status:</label>
+                    <div class="radio-status-group">
+                        <label class="radio-card"><input type="radio" name="tblStatus" value="AVAILABLE" checked> ðŸŸ¢ Available</label>
+                        <label class="radio-card"><input type="radio" name="tblStatus" value="RESERVED"> ðŸŸ¡ Reserved</label>
+                        <label class="radio-card"><input type="radio" name="tblStatus" value="OCCUPIED"> ðŸ”´ Occupied</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeSetupTableModal()">Cancel</button>
+                <button class="btn-pri" onclick="saveNewTableSetup()"><i data-lucide="check"></i> Create Table & Add to Floor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT TABLE MODAL -->
+    <div class="modal-overlay" id="editTableModal">
+        <div class="modal-container table-setup-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="edit-3"></i>
+                    <div>
+                        <h2>Edit Table Layout & Capacity</h2>
+                        <p>Change table shape, capacity, and name</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeEditTableModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label class="form-lbl">Table Name / Number:</label>
+                        <input type="text" class="form-input" id="editTblFormName" placeholder="e.g. T-01, VIP-2, Garden-A">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-lbl">Assign Floor:</label>
+                        <select class="form-select" id="editTblFormFloor" disabled>
+                            <!-- Disabled during edit, just for info -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row-grid" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label class="form-lbl">Table Shape:</label>
+                        <select class="form-select" id="editTblFormShape">
+                            <option value="round">â­• Round / Circle Table</option>
+                            <option value="square">â¬› Square Table</option>
+                            <option value="rectangle">â–­ Rectangle Dining Table</option>
+                            <option value="oval">ðŸ›‹ï¸ Oval / Booth Sofa</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-lbl">Seating Capacity (Chairs):</label>
+                        <select class="form-select" id="editTblFormCapacity">
+                            <option value="2">2 Chairs (Couple)</option>
+                            <option value="4" selected>4 Chairs (Standard)</option>
+                            <option value="6">6 Chairs (Family)</option>
+                            <option value="8">8 Chairs (Large Group)</option>
+                            <option value="12">12 Chairs (Banquet)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row-grid" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label class="form-lbl">Rotation (Degrees):</label>
+                        <select class="form-select" id="editTblFormRotation">
+                            <option value="0">0Â° (Horizontal / Default)</option>
+                            <option value="45">45Â°</option>
+                            <option value="90">90Â° (Vertical)</option>
+                            <option value="135">135Â°</option>
+                            <option value="180">180Â° (Flipped)</option>
+                            <option value="-45">-45Â°</option>
+                            <option value="-90">-90Â° (Vertical)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeEditTableModal()">Cancel</button>
+                <button class="btn-pri" onclick="saveEditTable()"><i data-lucide="save"></i> Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE NEW FLOOR MODAL -->
+    <div class="modal-overlay" id="createFloorModal">
+        <div class="modal-container item-modal-box">
+            <div class="modal-header">
+                <h3>Create New Floor / Dining Section</h3>
+                <button class="btn-close-modal" onclick="closeCreateFloorModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-lbl">Floor / Dining Area Name:</label>
+                    <input type="text" class="form-input" id="newFloorNameInput" placeholder="e.g. Main Dining Hall, 2nd Floor VIP, Rooftop Terrace...">
+                </div>
+                <div class="form-group" style="margin-top: 12px;">
+                    <label class="form-lbl">Floor Outline Style:</label>
+                    <select class="form-select" id="newFloorShapeStyle">
+                        <option value="standard">Standard Rectangular Hall</option>
+                        <option value="lshape">L-Shaped Dining Space</option>
+                        <option value="courtyard">Open Courtyard Garden</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeCreateFloorModal()">Cancel</button>
+                <button class="btn-pri" onclick="confirmCreateFloor()"><i data-lucide="plus"></i> Add Floor Layout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT FLOOR MODAL -->
+    <div class="modal-overlay" id="editFloorModal">
+        <div class="modal-container item-modal-box">
+            <div class="modal-header">
+                <h3>Edit Current Floor Area</h3>
+                <button class="btn-close-modal" onclick="closeEditFloorModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-lbl">Floor / Dining Area Name:</label>
+                    <input type="text" class="form-input" id="editFloorNameInput">
+                </div>
+                <div class="form-group" style="margin-top: 12px;">
+                    <label class="form-lbl">Floor Outline Style:</label>
+                    <select class="form-select" id="editFloorShapeStyle">
+                        <option value="standard">Standard Rectangular Hall</option>
+                        <option value="lshape">L-Shaped Dining Space</option>
+                        <option value="courtyard">Open Courtyard Garden</option>
+                    </select>
+                </div>
+                <div class="form-row-grid" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label class="form-lbl">Canvas Width (px):</label>
+                        <input type="number" class="form-input" id="editFloorWidth" min="600" max="2400" step="50" placeholder="e.g. 900">
+                        <small style="color: #64748b; font-size: 11px;">Min: 600px â€” Max: 2400px</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-lbl">Canvas Height (px):</label>
+                        <input type="number" class="form-input" id="editFloorHeight" min="400" max="1600" step="50" placeholder="e.g. 600">
+                        <small style="color: #64748b; font-size: 11px;">Min: 400px â€” Max: 1600px</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeEditFloorModal()">Cancel</button>
+                <button class="btn-pri" onclick="saveEditFloor()"><i data-lucide="save"></i> Save Floor Area</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ITEM MODIFIER / VARIANT MODAL -->
+    <div class="modal-overlay" id="itemModal">
+        <div class="modal-container item-modal-box">
+            <div class="modal-header">
+                <div class="item-modal-title">
+                    <h3 id="modalItemTitle">Beef Tehari Special</h3>
+                    <span class="item-modal-price" id="modalItemPrice">à§³220</span>
+                </div>
+                <button class="btn-close-modal" onclick="closeItemModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="modifier-group">
+                    <label class="mod-lbl">Portion Size</label>
+                    <div class="mod-options" id="sizeOptions">
+                        <button class="mod-btn active" data-price-add="0" onclick="selectModOption(this)">Standard Portion</button>
+                        <button class="mod-btn" data-price-add="100" onclick="selectModOption(this)">Full Large (+à§³100)</button>
+                    </div>
+                </div>
+
+                <div class="modifier-group">
+                    <label class="mod-lbl">Add-ons (Optional)</label>
+                    <div class="mod-addons">
+                        <label class="checkbox-card">
+                            <input type="checkbox" value="Egg" data-price="25" onchange="calcModalTotal()">
+                            <span>Extra Boiled Egg (+à§³25)</span>
+                        </label>
+                        <label class="checkbox-card">
+                            <input type="checkbox" value="Borhani" data-price="50" onchange="calcModalTotal()">
+                            <span>Chilled Borhani Glass (+à§³50)</span>
+                        </label>
+                        <label class="checkbox-card">
+                            <input type="checkbox" value="Salad" data-price="15" onchange="calcModalTotal()">
+                            <span>Cucumber Salad (+à§³15)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modifier-group">
+                    <label class="mod-lbl">Cooking / Preparation Note</label>
+                    <input type="text" class="form-input" id="modInstruction" placeholder="e.g. Less oil, extra spicy, separate gravy...">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="qty-picker">
+                    <button class="qty-btn" onclick="changeModalQty(-1)"><i data-lucide="minus"></i></button>
+                    <span class="qty-val" id="modalQty">1</span>
+                    <button class="qty-btn" onclick="changeModalQty(1)"><i data-lucide="plus"></i></button>
+                </div>
+                <button class="btn-pri btn-add-modal" onclick="confirmAddItemModal()">
+                    <span>ADD TO ORDER â€” <strong id="modalTotalPrice">à§³220</strong></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAYMENT TENDER MODAL -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-container pay-modal-box">
+            <div class="modal-header">
+                <div>
+                    <h2>Complete Order Payment</h2>
+                    <p>Total Payable: <strong class="pay-total-highlight" id="payModalAmount">à§³0.00</strong></p>
+                </div>
+                <button class="btn-close-modal" onclick="closePaymentModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body pay-body">
+                <div class="pay-methods">
+                    <button class="pay-method-btn active" onclick="selectPayMethod('cash', this)">
+                        <i data-lucide="banknote"></i> Cash
+                    </button>
+                    <button class="pay-method-btn" onclick="selectPayMethod('bkash', this)">
+                        <i data-lucide="smartphone"></i> bKash QR
+                    </button>
+                    <button class="pay-method-btn" onclick="selectPayMethod('nagad', this)">
+                        <i data-lucide="smartphone"></i> Nagad
+                    </button>
+                    <button class="pay-method-btn" onclick="selectPayMethod('card', this)">
+                        <i data-lucide="credit-card"></i> POS Card
+                    </button>
+                </div>
+
+                <div class="tender-section">
+                    <label>Tendered Cash Amount (à§³):</label>
+                    <input type="number" class="tender-input" id="tenderInput" placeholder="Enter amount" oninput="calcChange()">
+                    
+                    <div class="quick-cash-notes">
+                        <button class="note-btn" onclick="addTender(100)">+à§³100</button>
+                        <button class="note-btn" onclick="addTender(500)">+à§³500</button>
+                        <button class="note-btn" onclick="addTender(1000)">+à§³1000</button>
+                        <button class="note-btn" onclick="setExactTender()">Exact</button>
+                    </div>
+
+                    <div class="change-due-box">
+                        <span>Change Due to Customer:</span>
+                        <strong class="change-val" id="changeVal">à§³0.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closePaymentModal()">Cancel</button>
+                <button class="btn-pri btn-complete-pay" onclick="processPayment()">
+                    <i data-lucide="check-circle-2"></i> Print Receipt & Complete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast-notification" id="toast">
+        <i data-lucide="info" id="toastIcon"></i>
+        <span id="toastMsg">Action completed successfully</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
