@@ -1035,45 +1035,48 @@ function cancelTableReservation(tableId) {
 function openTableSummaryModal(tableObj) {
     const openOrder = RESTAURANT_DATA.openOrders.find(o => o.tableId === tableObj.id && o.status === 'OPEN');
 
+    if (!openOrder || !openOrder.cart || openOrder.cart.length === 0) {
+        // Self-heal: table marked OCCUPIED but has no open order / active items
+        tableObj.status = 'AVAILABLE';
+        tableObj.orderId = null;
+        if (openOrder) openOrder.status = 'CANCELLED';
+        renderFloorLayoutSystem();
+        openTableActionModal(tableObj);
+        showToast(`Table ${tableObj.name} had no active items — freed to Available.`);
+        return;
+    }
+
     document.getElementById('summaryTableTitle').textContent = `Table ${tableObj.name} Order Summary`;
-    document.getElementById('summaryTableSubtitle').textContent = openOrder
-        ? `Invoice: ${openOrder.id} • Created at ${openOrder.createdAt}`
-        : `Table is occupied`;
+    document.getElementById('summaryTableSubtitle').textContent = `Invoice: ${openOrder.id} • Created at ${openOrder.createdAt}`;
 
     const tbody = document.getElementById('summaryItemsTableBody');
     tbody.innerHTML = '';
 
-    if (!openOrder || openOrder.cart.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No active items in order</td></tr>`;
-        document.getElementById('summaryTotalItems').textContent = "0";
-        document.getElementById('summaryTotalPayable').textContent = "৳0.00";
-    } else {
-        let totalItems = 0;
-        let subtotal = 0;
+    let totalItems = 0;
+    let subtotal = 0;
 
-        openOrder.cart.forEach(item => {
-            const lineTotal = item.price * item.qty;
-            totalItems += item.qty;
-            subtotal += lineTotal;
+    openOrder.cart.forEach(item => {
+        const lineTotal = item.price * item.qty;
+        totalItems += item.qty;
+        subtotal += lineTotal;
 
-            const optsText = item.options.length > 0 ? ` <small>(${item.options.join(', ')})</small>` : '';
+        const optsText = item.options && item.options.length > 0 ? ` <small>(${item.options.join(', ')})</small>` : '';
 
-            tbody.innerHTML += `
-                <tr>
-                    <td><strong>${item.name}</strong>${optsText}</td>
-                    <td style="text-align: center;"><strong>${item.qty}</strong></td>
-                    <td style="text-align: right;">৳${item.price}</td>
-                    <td style="text-align: right;"><strong>৳${lineTotal}</strong></td>
-                </tr>
-            `;
-        });
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${item.name}</strong>${optsText}</td>
+                <td style="text-align: center;"><strong>${item.qty}</strong></td>
+                <td style="text-align: right;">৳${item.price}</td>
+                <td style="text-align: right;"><strong>৳${lineTotal}</strong></td>
+            </tr>
+        `;
+    });
 
-        const vat = (subtotal * 5) / 100;
-        const payable = subtotal + vat;
+    const vat = (subtotal * (openOrder.vatPercent || 5)) / 100;
+    const payable = subtotal + vat;
 
-        document.getElementById('summaryTotalItems').textContent = totalItems;
-        document.getElementById('summaryTotalPayable').textContent = `৳${payable.toFixed(2)}`;
-    }
+    document.getElementById('summaryTotalItems').textContent = totalItems;
+    document.getElementById('summaryTotalPayable').textContent = `৳${payable.toFixed(2)}`;
 
     document.getElementById('tableSummaryModal').classList.add('active');
     lucide.createIcons();
@@ -1475,31 +1478,78 @@ function updateCartQty(key, delta) {
     if (item.qty <= 0) {
         state.cart = state.cart.filter(i => i.key !== key);
     }
-    renderPOS();
-}
 
-function clearCart() {
-    // Cancel the open order and restore stock if a table has an active order
-    if (state.selectedTable) {
+    // Auto-release table if all cart items were removed while editing an open order
+    if (state.cart.length === 0 && state.selectedTable) {
         const openOrder = RESTAURANT_DATA.openOrders.find(
             o => o.tableId === state.selectedTable && o.status === 'OPEN'
         );
         if (openOrder) {
+            state.originalOrderCart.forEach(origItem => {
+                const product = RESTAURANT_DATA.products.find(p => p.id === origItem.productId);
+                if (product) product.stock += origItem.qty;
+            });
+            openOrder.status = 'CANCELLED';
+            const tableObj = RESTAURANT_DATA.tables.find(t => t.id === state.selectedTable);
+            if (tableObj) {
+                tableObj.status = 'AVAILABLE';
+                tableObj.orderId = null;
+            }
+            state.originalOrderCart = [];
+            state.activeInvoiceId = `INV-${Date.now().toString().slice(-6)}`;
+            const invNoEl = document.getElementById('invoiceNo');
+            if (invNoEl) invNoEl.textContent = state.activeInvoiceId;
+            showToast('🗑️ All items removed — order cancelled & table released.');
+            renderFloorLayoutSystem();
+        }
+    }
+
+    renderPOS();
+}
+
+function clearCart() {
+    let openOrder = null;
+    if (state.selectedTable) {
+        openOrder = RESTAURANT_DATA.openOrders.find(
+            o => o.tableId === state.selectedTable && o.status === 'OPEN'
+        );
+    }
+    if (!openOrder && state.activeInvoiceId) {
+        openOrder = RESTAURANT_DATA.openOrders.find(
+            o => o.id === state.activeInvoiceId && o.status === 'OPEN'
+        );
+    }
+
+    if (openOrder) {
+        if (openOrder.cart) {
             openOrder.cart.forEach(item => {
                 const product = RESTAURANT_DATA.products.find(p => p.id === item.productId);
                 if (product) product.stock += item.qty;
             });
-            openOrder.status = 'CANCELLED';
         }
-        const tableObj = RESTAURANT_DATA.tables.find(t => t.id === state.selectedTable);
-        if (tableObj) tableObj.status = 'AVAILABLE';
+        openOrder.status = 'CANCELLED';
+    }
+
+    const targetTableId = openOrder ? openOrder.tableId : state.selectedTable;
+    if (targetTableId) {
+        const tableObj = RESTAURANT_DATA.tables.find(t => t.id === targetTableId);
+        if (tableObj) {
+            tableObj.status = 'AVAILABLE';
+            tableObj.orderId = null;
+            tableObj.reservation = null;
+        }
     }
 
     state.cart = [];
     state.originalOrderCart = [];
     state.discountPercent = 0;
     state.customDiscountAmount = 0;
-    renderCart();
+
+    state.activeInvoiceId = `INV-${Date.now().toString().slice(-6)}`;
+    const invNoEl = document.getElementById('invoiceNo');
+    if (invNoEl) invNoEl.textContent = state.activeInvoiceId;
+
+    renderPOS();
     renderFloorLayoutSystem();
     showToast('🗑️ Invoice cleared — table is now free.');
 }
