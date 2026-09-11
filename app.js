@@ -1479,12 +1479,29 @@ function updateCartQty(key, delta) {
 }
 
 function clearCart() {
+    // Cancel the open order and restore stock if a table has an active order
+    if (state.selectedTable) {
+        const openOrder = RESTAURANT_DATA.openOrders.find(
+            o => o.tableId === state.selectedTable && o.status === 'OPEN'
+        );
+        if (openOrder) {
+            openOrder.cart.forEach(item => {
+                const product = RESTAURANT_DATA.products.find(p => p.id === item.productId);
+                if (product) product.stock += item.qty;
+            });
+            openOrder.status = 'CANCELLED';
+        }
+        const tableObj = RESTAURANT_DATA.tables.find(t => t.id === state.selectedTable);
+        if (tableObj) tableObj.status = 'AVAILABLE';
+    }
+
     state.cart = [];
     state.originalOrderCart = [];
     state.discountPercent = 0;
     state.customDiscountAmount = 0;
     renderCart();
-    showToast("Invoice cleared");
+    renderFloorLayoutSystem();
+    showToast('🗑️ Invoice cleared — table is now free.');
 }
 
 function renderCart() {
