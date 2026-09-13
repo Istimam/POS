@@ -23,10 +23,10 @@
                 <h1 class="brand-title">MANAGERIUM <span class="badge-tag">RESTAURANT POS</span></h1>
                 <div class="counter-meta">
                     <span><i data-lucide="monitor"></i> Counter 001</span>
-                    <span class="dot">â€¢</span>
+                    <span class="dot">&bull;</span>
                     <span><i data-lucide="user"></i> Nasrullah</span>
-                    <span class="dot">â€¢</span>
-                    <span><i data-lucide="map-pin"></i> Dhanmondi Outlet</span>
+                    <span class="dot">&bull;</span>
+                    <span><i data-lucide="map-pin"></i> Dhanmondi Warehouse</span>
                 </div>
             </div>
         </div>
@@ -59,7 +59,7 @@
         <div class="header-right-actions">
             <button class="btn-header btn-backoffice" onclick="openBackofficeModal()">
                 <i data-lucide="sliders"></i>
-                <span>âš™ï¸ Back-Office Config</span>
+                <span>&#9881;&#65039; Back-Office Config</span>
             </button>
             <div class="order-type-pills">
                 <button class="pill-btn active" data-type="Dine-In" onclick="setOrderType(this)">
@@ -84,9 +84,13 @@
                 <i data-lucide="shopping-cart"></i>
                 <span>Sales</span>
             </button>
-            <button class="nav-icon-btn" id="navBtnTables" title="Floor Layout & Tables" onclick="switchMainView('tables')">
+            <button class="nav-icon-btn" id="navBtnTables" title="Floor Layout &amp; Tables" onclick="switchMainView('tables')">
                 <i data-lucide="grid"></i>
                 <span>Tables</span>
+            </button>
+            <button class="nav-icon-btn" id="navBtnSetup" title="Back-Office Setup" onclick="switchMainView('setup')">
+                <i data-lucide="settings"></i>
+                <span>Setup</span>
             </button>
             <button class="nav-icon-btn" id="navBtnHistory" title="Open Orders & History" onclick="openHistoryModal()">
                 <i data-lucide="receipt"></i>
@@ -200,8 +204,8 @@
                         
                         <div class="table-status-pills">
                             <span class="status-pill pill-all active" onclick="filterTablesByStatus('ALL', this)">ALL</span>
-                            <span class="status-pill pill-avail" onclick="filterTablesByStatus('AVAILABLE', this)">ðŸŸ¢ AVAILABLE</span>
-                            <span class="status-pill pill-res" onclick="filterTablesByStatus('RESERVED', this)">ðŸŸ¡ RESERVED</span>
+                            <span class="status-pill pill-avail" onclick="filterTablesByStatus('AVAILABLE', this)">&#129002; AVAILABLE</span>
+                            <span class="status-pill pill-res" onclick="filterTablesByStatus('RESERVED', this)">&#128993; RESERVED</span>
                             <span class="status-pill pill-occ" onclick="filterTablesByStatus('OCCUPIED', this)">ðŸ”´ OCCUPIED</span>
                         </div>
                     </div>
@@ -222,6 +226,56 @@
                     </div>
                 </div>
             </section>
+        </div>
+
+        <!-- VIEW 3: BACK-OFFICE SETUP PAGE -->
+        <div class="main-view-container" id="viewSetup">
+            <div class="setup-page-view">
+                <div class="setup-cards-grid">
+                    <!-- Card 1: Discount & Offer -->
+                    <div class="setup-card">
+                        <div class="setup-card-icon icon-red">
+                            <i data-lucide="percent"></i>
+                        </div>
+                        <h3 class="setup-card-title">Discount &amp; Offer</h3>
+                    </div>
+                    <!-- Card 2: Counter Setup -->
+                    <div class="setup-card">
+                        <div class="setup-card-icon icon-blue">
+                            <i data-lucide="monitor"></i>
+                        </div>
+                        <h3 class="setup-card-title">Counter Setup</h3>
+                    </div>
+                    <!-- Card 3: Sales Setup -->
+                    <div class="setup-card">
+                        <div class="setup-card-icon icon-blue">
+                            <i data-lucide="clipboard-list"></i>
+                        </div>
+                        <h3 class="setup-card-title">Sales Setup</h3>
+                    </div>
+                    <!-- Card 4: Point Redeem OTP -->
+                    <div class="setup-card">
+                        <div class="setup-card-icon icon-red">
+                            <i data-lucide="shield-check"></i>
+                        </div>
+                        <h3 class="setup-card-title">Point Redeem OTP</h3>
+                    </div>
+                    <!-- Card 5: Floor & Table Setup -->
+                    <div class="setup-card" onclick="switchMainView('tables')">
+                        <div class="setup-card-icon icon-blue">
+                            <i data-lucide="layout"></i>
+                        </div>
+                        <h3 class="setup-card-title">Floor &amp; Table Setup</h3>
+                    </div>
+                    <!-- Card 6: Kitchen Management -->
+                    <div class="setup-card setup-card-active" onclick="window.location='kitchen.html'">
+                        <div class="setup-card-icon icon-orange">
+                            <i data-lucide="cooking-pot"></i>
+                        </div>
+                        <h3 class="setup-card-title">Kitchen Management</h3>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- RIGHT INVOICE / ORDER CART PANEL (GLOBAL TO ALL VIEWS) -->
@@ -263,7 +317,7 @@
                         <tr>
                             <th style="width: 45%;">Item Name</th>
                             <th style="width: 25%; text-align: center;">Qty</th>
-                            <th style="width: 30%; text-align: right;">Total (à§³)</th>
+                            <th style="width: 30%; text-align: right;">Total (&#2547;)</th>
                         </tr>
                     </thead>
                     <tbody id="cartTableBody">
@@ -281,7 +335,7 @@
             <div class="cart-summary-section">
                 <div class="summary-line">
                     <span class="sum-lbl">Subtotal</span>
-                    <span class="sum-val" id="valSubtotal">à§³0.00</span>
+                    <span class="sum-val" id="valSubtotal">&#2547;0.00</span>
                 </div>
                 
                 <div class="summary-line interactive">
@@ -292,17 +346,17 @@
                         <button class="disc-pill" onclick="applyDiscount(10)">10%</button>
                         <button class="disc-pill" onclick="applyCustomDiscount()">Custom</button>
                     </div>
-                    <span class="sum-val text-discount" id="valDiscount">-à§³0.00</span>
+                    <span class="sum-val text-discount" id="valDiscount">-&#2547;0.00</span>
                 </div>
 
                 <div class="summary-line">
                     <span class="sum-lbl">SD & VAT (5%)</span>
-                    <span class="sum-val" id="valVat">à§³0.00</span>
+                    <span class="sum-val" id="valVat">&#2547;0.00</span>
                 </div>
 
                 <div class="summary-line grand-total-line">
                     <span class="grand-lbl">Payable Total</span>
-                    <span class="grand-val" id="valPayable">à§³0.00</span>
+                    <span class="grand-val" id="valPayable">&#2547;0.00</span>
                 </div>
             </div>
 
@@ -315,7 +369,7 @@
 
                 <button class="btn-pos btn-pay" id="btnPay" onclick="openPaymentModal()">
                     <i data-lucide="credit-card"></i>
-                    <span>PAY FIRST (à§³<span id="btnPayAmount">0</span>)</span>
+                    <span>PAY FIRST (&#2547;<span id="btnPayAmount">0</span>)</span>
                 </button>
             </div>
         </aside>
@@ -330,7 +384,7 @@
                     <i data-lucide="layout"></i>
                     <div>
                         <h2 id="tblActionTitle">Table T-01 Options</h2>
-                        <p id="tblActionSubtitle">Floor: Ground Floor â€¢ Capacity: 4 Chairs â€¢ Status: ðŸŸ¢ AVAILABLE</p>
+                        <p id="tblActionSubtitle">Floor: Ground Floor &bull; Capacity: 4 Chairs &bull; Status: &#129002; AVAILABLE</p>
                     </div>
                 </div>
                 <button class="btn-close-modal" onclick="closeTableActionModal()">
@@ -406,7 +460,7 @@
                     <i data-lucide="utensils"></i>
                     <div>
                         <h2 id="summaryTableTitle">Table T-03 Order Summary</h2>
-                        <p id="summaryTableSubtitle">Active Invoice: INV-18260905-0042 â€¢ Status: ðŸ”´ OCCUPIED</p>
+                        <p id="summaryTableSubtitle">Active Invoice: INV-18260905-0042 &bull; Status: ðŸ”´ OCCUPIED</p>
                     </div>
                 </div>
                 <button class="btn-close-modal" onclick="closeTableSummaryModal()">
@@ -438,7 +492,7 @@
                     </div>
                     <div class="summary-stat">
                         <span>Total Payable:</span>
-                        <strong class="text-primary-val" id="summaryTotalPayable">à§³0.00</strong>
+                        <strong class="text-primary-val" id="summaryTotalPayable">&#2547;0.00</strong>
                     </div>
                 </div>
             </div>
@@ -472,6 +526,12 @@
             </div>
 
             <div class="modal-body">
+                <div class="history-filter-tabs">
+                    <button class="btn-history-tab active" onclick="filterHistoryTab('ALL', this)">All Orders</button>
+                    <button class="btn-history-tab" onclick="filterHistoryTab('OPEN', this)">Open Orders</button>
+                    <button class="btn-history-tab" onclick="filterHistoryTab('PAID', this)">Paid Invoices</button>
+                    <button class="btn-history-tab" onclick="filterHistoryTab('CANCELLED', this)">Cancelled</button>
+                </div>
                 <table class="bo-table">
                     <thead>
                         <tr>
@@ -782,8 +842,8 @@
                 <div class="form-group" style="margin-top: 12px;">
                     <label class="form-lbl">Initial Status:</label>
                     <div class="radio-status-group">
-                        <label class="radio-card"><input type="radio" name="tblStatus" value="AVAILABLE" checked> ðŸŸ¢ Available</label>
-                        <label class="radio-card"><input type="radio" name="tblStatus" value="RESERVED"> ðŸŸ¡ Reserved</label>
+                        <label class="radio-card"><input type="radio" name="tblStatus" value="AVAILABLE" checked> &#129002; Available</label>
+                        <label class="radio-card"><input type="radio" name="tblStatus" value="RESERVED"> &#128993; Reserved</label>
                         <label class="radio-card"><input type="radio" name="tblStatus" value="OCCUPIED"> ðŸ”´ Occupied</label>
                     </div>
                 </div>
@@ -854,13 +914,13 @@
                     <div class="form-group">
                         <label class="form-lbl">Rotation (Degrees):</label>
                         <select class="form-select" id="editTblFormRotation">
-                            <option value="0">0Â° (Horizontal / Default)</option>
-                            <option value="45">45Â°</option>
-                            <option value="90">90Â° (Vertical)</option>
-                            <option value="135">135Â°</option>
-                            <option value="180">180Â° (Flipped)</option>
-                            <option value="-45">-45Â°</option>
-                            <option value="-90">-90Â° (Vertical)</option>
+                            <option value="0">0&#176; (Horizontal / Default)</option>
+                            <option value="45">45&#176;</option>
+                            <option value="90">90&#176; (Vertical)</option>
+                            <option value="135">135&#176;</option>
+                            <option value="180">180&#176; (Flipped)</option>
+                            <option value="-45">-45&#176;</option>
+                            <option value="-90">-90&#176; (Vertical)</option>
                         </select>
                     </div>
                 </div>
@@ -947,7 +1007,7 @@
             <div class="modal-header">
                 <div class="item-modal-title">
                     <h3 id="modalItemTitle">Beef Tehari Special</h3>
-                    <span class="item-modal-price" id="modalItemPrice">à§³220</span>
+                    <span class="item-modal-price" id="modalItemPrice">&#2547;220</span>
                 </div>
                 <button class="btn-close-modal" onclick="closeItemModal()">
                     <i data-lucide="x"></i>
@@ -959,7 +1019,7 @@
                     <label class="mod-lbl">Portion Size</label>
                     <div class="mod-options" id="sizeOptions">
                         <button class="mod-btn active" data-price-add="0" onclick="selectModOption(this)">Standard Portion</button>
-                        <button class="mod-btn" data-price-add="100" onclick="selectModOption(this)">Full Large (+à§³100)</button>
+                        <button class="mod-btn" data-price-add="100" onclick="selectModOption(this)">Full Large (+&#2547;100)</button>
                     </div>
                 </div>
 
@@ -968,15 +1028,15 @@
                     <div class="mod-addons">
                         <label class="checkbox-card">
                             <input type="checkbox" value="Egg" data-price="25" onchange="calcModalTotal()">
-                            <span>Extra Boiled Egg (+à§³25)</span>
+                            <span>Extra Boiled Egg (+&#2547;25)</span>
                         </label>
                         <label class="checkbox-card">
                             <input type="checkbox" value="Borhani" data-price="50" onchange="calcModalTotal()">
-                            <span>Chilled Borhani Glass (+à§³50)</span>
+                            <span>Chilled Borhani Glass (+&#2547;50)</span>
                         </label>
                         <label class="checkbox-card">
                             <input type="checkbox" value="Salad" data-price="15" onchange="calcModalTotal()">
-                            <span>Cucumber Salad (+à§³15)</span>
+                            <span>Cucumber Salad (+&#2547;15)</span>
                         </label>
                     </div>
                 </div>
@@ -994,7 +1054,7 @@
                     <button class="qty-btn" onclick="changeModalQty(1)"><i data-lucide="plus"></i></button>
                 </div>
                 <button class="btn-pri btn-add-modal" onclick="confirmAddItemModal()">
-                    <span>ADD TO ORDER â€” <strong id="modalTotalPrice">à§³220</strong></span>
+                    <span>ADD TO ORDER â€” <strong id="modalTotalPrice">&#2547;220</strong></span>
                 </button>
             </div>
         </div>
@@ -1006,7 +1066,7 @@
             <div class="modal-header">
                 <div>
                     <h2>Complete Order Payment</h2>
-                    <p>Total Payable: <strong class="pay-total-highlight" id="payModalAmount">à§³0.00</strong></p>
+                    <p>Total Payable: <strong class="pay-total-highlight" id="payModalAmount">&#2547;0.00</strong></p>
                 </div>
                 <button class="btn-close-modal" onclick="closePaymentModal()">
                     <i data-lucide="x"></i>
@@ -1030,19 +1090,19 @@
                 </div>
 
                 <div class="tender-section">
-                    <label>Tendered Cash Amount (à§³):</label>
+                    <label>Tendered Cash Amount (&#2547;):</label>
                     <input type="number" class="tender-input" id="tenderInput" placeholder="Enter amount" oninput="calcChange()">
                     
                     <div class="quick-cash-notes">
-                        <button class="note-btn" onclick="addTender(100)">+à§³100</button>
-                        <button class="note-btn" onclick="addTender(500)">+à§³500</button>
-                        <button class="note-btn" onclick="addTender(1000)">+à§³1000</button>
+                        <button class="note-btn" onclick="addTender(100)">+&#2547;100</button>
+                        <button class="note-btn" onclick="addTender(500)">+&#2547;500</button>
+                        <button class="note-btn" onclick="addTender(1000)">+&#2547;1000</button>
                         <button class="note-btn" onclick="setExactTender()">Exact</button>
                     </div>
 
                     <div class="change-due-box">
                         <span>Change Due to Customer:</span>
-                        <strong class="change-val" id="changeVal">à§³0.00</strong>
+                        <strong class="change-val" id="changeVal">&#2547;0.00</strong>
                     </div>
                 </div>
             </div>
@@ -1062,6 +1122,7 @@
         <span id="toastMsg">Action completed successfully</span>
     </div>
 
+    <script src="data.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

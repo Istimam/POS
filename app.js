@@ -1,180 +1,15 @@
+function hasUnsavedCartChanges() {
+    if (!state.selectedTable) return false;
+    if (state.cart.length === 0 && state.originalOrderCart.length === 0) return false;
+    const currentStr = JSON.stringify(state.cart.map(i => ({ key: i.key, qty: i.qty })));
+    const origStr = JSON.stringify(state.originalOrderCart.map(i => ({ key: i.key, qty: i.qty })));
+    return currentStr !== origStr;
+}
+
 /* ==========================================================================
    MANAGERIUM POS - RESTAURANT POS, FLOOR LAYOUT & RESERVATION SYSTEM
    ========================================================================== */
 
-// --- 1. DATA SCHEMA ---
-const RESTAURANT_DATA = {
-    // Floors
-    floors: [
-        { id: 'floor_ground', name: 'Ground Floor Dining', style: 'standard', width: 900, height: 600 },
-        { id: 'floor_vip', name: '1st Floor VIP Lounge', style: 'lshape', width: 900, height: 600 },
-        { id: 'floor_terrace', name: 'Rooftop Garden', style: 'courtyard', width: 900, height: 600 }
-    ],
-
-    // Tables Data with Shapes, Capacity, Positions, Status & Reservations
-    tables: [
-        { id: 't1', name: 'T-01', floorId: 'floor_ground', shape: 'round', capacity: 4, status: 'AVAILABLE', x: 40, y: 40 },
-        { id: 't2', name: 'T-02', floorId: 'floor_ground', shape: 'square', capacity: 2, status: 'RESERVED', reservation: { name: 'Rahat Ahmed', phone: '01711223344', date: '2026-09-05', time: '19:30', guests: 2 }, x: 220, y: 40 },
-        { id: 't3', name: 'T-03', floorId: 'floor_ground', shape: 'rectangle', capacity: 6, status: 'OCCUPIED', orderId: 'INV-18260905-0042', x: 380, y: 40 },
-        { id: 't4', name: 'T-04', floorId: 'floor_ground', shape: 'oval', capacity: 8, status: 'AVAILABLE', x: 580, y: 40 },
-        { id: 't5', name: 'T-05', floorId: 'floor_ground', shape: 'rectangle', capacity: 6, status: 'AVAILABLE', x: 120, y: 240 },
-        { id: 't6', name: 'T-06', floorId: 'floor_ground', shape: 'round', capacity: 4, status: 'OCCUPIED', orderId: 'INV-18260905-0048', x: 360, y: 240 },
-        
-        { id: 'vip1', name: 'VIP-01', floorId: 'floor_vip', shape: 'rectangle', capacity: 12, status: 'RESERVED', reservation: { name: 'Dr. Tanvir', phone: '01899001122', date: '2026-09-05', time: '20:00', guests: 10 }, x: 80, y: 60 },
-        { id: 'vip2', name: 'VIP-02', floorId: 'floor_vip', shape: 'oval', capacity: 8, status: 'AVAILABLE', x: 400, y: 60 },
-        
-        { id: 'ter1', name: 'Terrace-A', floorId: 'floor_terrace', shape: 'round', capacity: 4, status: 'AVAILABLE', x: 100, y: 80 },
-        { id: 'ter2', name: 'Terrace-B', floorId: 'floor_terrace', shape: 'round', capacity: 4, status: 'AVAILABLE', x: 320, y: 80 }
-    ],
-
-    // Active Open Pay-Later Orders Store
-    openOrders: [
-        {
-            id: 'INV-18260905-0042',
-            tableId: 't3',
-            tableName: 'T-03',
-            orderType: 'Dine-In',
-            status: 'OPEN',
-            cart: [
-                { key: '206_', productId: 206, name: 'Plain Nazirshail Rice', price: 40, qty: 3, options: [], maxStock: 120 },
-                { key: '204_', productId: 204, name: 'Deshi Chicken Curry', price: 220, qty: 2, options: [], maxStock: 14 },
-                { key: '106_', productId: 106, name: 'Special Milk Dudh Cha', price: 20, qty: 3, options: [], maxStock: 85 }
-            ],
-            discountPercent: 0,
-            vatPercent: 5,
-            createdAt: '02:45 PM'
-        },
-        {
-            id: 'INV-18260905-0048',
-            tableId: 't6',
-            tableName: 'T-06',
-            orderType: 'Dine-In',
-            status: 'OPEN',
-            cart: [
-                { key: '301_', productId: 301, name: 'Old Dhaka Kacchi Biryani', price: 340, qty: 2, options: ['Full Portion'], maxStock: 22 },
-                { key: '304_', productId: 304, name: 'Chilled Borhani Glass', price: 60, qty: 2, options: [], maxStock: 45 }
-            ],
-            discountPercent: 5,
-            vatPercent: 5,
-            createdAt: '03:10 PM'
-        }
-    ],
-
-    // Dayparts
-    dayparts: [
-        {
-            id: 'breakfast',
-            name: 'Morning Breakfast',
-            icon: 'sun',
-            emoji: '🌅',
-            startTime: '06:00',
-            endTime: '11:00',
-            timeDisplay: '(06:00 AM - 11:00 AM)',
-            description: 'Showing auto-sequenced breakfast paratha, bhaji, tea & morning specials',
-            days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-            enabled: true
-        },
-        {
-            id: 'lunch',
-            name: 'Afternoon Lunch',
-            icon: 'utensils',
-            emoji: '🍚',
-            startTime: '11:00',
-            endTime: '16:00',
-            timeDisplay: '(11:00 AM - 04:00 PM)',
-            description: 'Showing lunch rice, fish curry, chicken, mutton, bhorta & dal',
-            days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Sat'],
-            enabled: true
-        },
-        {
-            id: 'friday_lunch',
-            name: 'Friday Special Lunch',
-            icon: 'sparkles',
-            emoji: '🕌',
-            startTime: '12:00',
-            endTime: '16:00',
-            timeDisplay: '(12:00 PM - 04:00 PM)',
-            description: 'Showing Friday Special Kacchi Biryani, Borhani, Roast & Tehari',
-            days: ['Fri'],
-            enabled: true
-        },
-        {
-            id: 'evening',
-            name: 'Evening Snacks & Grill',
-            icon: 'flame',
-            emoji: '🍢',
-            startTime: '16:00',
-            endTime: '20:00',
-            timeDisplay: '(04:00 PM - 08:00 PM)',
-            description: 'Showing evening grill chicken, naan, shawarma & fried items',
-            days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-            enabled: true
-        },
-        {
-            id: 'night',
-            name: 'Night Dinner',
-            icon: 'moon',
-            emoji: '🌙',
-            startTime: '20:00',
-            endTime: '24:00',
-            timeDisplay: '(08:00 PM - 12:00 AM)',
-            description: 'Showing late-night dinner rice, khichuri, mutton curry & desserts',
-            days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-            enabled: true
-        }
-    ],
-
-    // Categories
-    categories: [
-        { id: 'cat_paratha', name: 'Paratha & Breads', icon: '🫓', dayparts: ['breakfast', 'night'] },
-        { id: 'cat_bhaji', name: 'Eggs & Bhaji', icon: '🍳', dayparts: ['breakfast'] },
-        { id: 'cat_rice', name: 'Rice & Kacchi', icon: '🍚', dayparts: ['lunch', 'friday_lunch', 'night'] },
-        { id: 'cat_fish', name: 'Fish & Bhorta', icon: '🐟', dayparts: ['lunch', 'night'] },
-        { id: 'cat_meat', name: 'Chicken & Mutton', icon: '🍗', dayparts: ['lunch', 'friday_lunch', 'night'] },
-        { id: 'cat_grill', name: 'Grill & BBQ', icon: '🍢', dayparts: ['evening'] },
-        { id: 'cat_snacks', name: 'Shawarma & Fried', icon: '🌯', dayparts: ['evening'] },
-        { id: 'cat_tea', name: 'Tea & Beverages', icon: '☕', dayparts: ['breakfast', 'lunch', 'evening', 'night'] },
-        { id: 'cat_sweets', name: 'Halwa & Sweets', icon: '🍨', dayparts: ['breakfast', 'lunch', 'night'] }
-    ],
-
-    // Products Database
-    products: [
-        // BREAKFAST
-        { id: 101, code: 'BF-01', name: 'Special Butter Paratha', catId: 'cat_paratha', price: 25, origPrice: 30, discountPercent: 15, stock: 24, avatar: '🫓', dayparts: ['breakfast', 'night'], salesCount: 420, isPinned: true, hasModifiers: true, enabled: true },
-        { id: 102, code: 'BF-02', name: 'Plain Paratha', catId: 'cat_paratha', price: 15, origPrice: null, discountPercent: 0, stock: 0, avatar: '🫓', dayparts: ['breakfast', 'night'], salesCount: 380, isPinned: false, enabled: true },
-        { id: 103, code: 'BF-03', name: 'Mixed Vegetable Bhaji', catId: 'cat_bhaji', price: 40, origPrice: null, discountPercent: 0, stock: 12, avatar: '🥗', dayparts: ['breakfast'], salesCount: 290, isPinned: true, enabled: true },
-        { id: 104, code: 'BF-04', name: 'Egg Mamlet / Poach', catId: 'cat_bhaji', price: 30, origPrice: 35, discountPercent: 14, stock: 18, avatar: '🍳', dayparts: ['breakfast'], salesCount: 310, hasModifiers: true, enabled: true },
-        { id: 105, code: 'BF-05', name: 'Thick Yellow Daal Fry', catId: 'cat_bhaji', price: 35, origPrice: null, discountPercent: 0, stock: 4, avatar: '🥣', dayparts: ['breakfast'], salesCount: 180, enabled: true },
-        { id: 106, code: 'BF-06', name: 'Special Milk Dudh Cha', catId: 'cat_tea', price: 20, origPrice: null, discountPercent: 0, stock: 85, avatar: '☕', dayparts: ['breakfast', 'lunch', 'evening', 'night'], salesCount: 550, isPinned: true, enabled: true },
-        { id: 107, code: 'BF-07', name: 'Special Suji Halwa', catId: 'cat_sweets', price: 45, origPrice: 50, discountPercent: 10, stock: 15, avatar: '🍨', dayparts: ['breakfast'], salesCount: 140, enabled: true },
-
-        // LUNCH
-        { id: 201, code: 'LN-01', name: 'Shorshe Ilish (Hilsa)', catId: 'cat_fish', price: 320, origPrice: 360, discountPercent: 11, stock: 5, avatar: '🐟', dayparts: ['lunch', 'night'], salesCount: 210, isPinned: true, enabled: true },
-        { id: 202, code: 'LN-02', name: 'Rui Fish Curry', catId: 'cat_fish', price: 180, origPrice: null, discountPercent: 0, stock: 0, avatar: '🐠', dayparts: ['lunch', 'night'], salesCount: 160, enabled: true },
-        { id: 203, code: 'LN-03', name: 'Aloo Bhorta & Shutki', catId: 'cat_fish', price: 50, origPrice: null, discountPercent: 0, stock: 30, avatar: '🥔', dayparts: ['lunch', 'night'], salesCount: 340, isPinned: true, enabled: true },
-        { id: 204, code: 'LN-04', name: 'Deshi Chicken Curry', catId: 'cat_meat', price: 220, origPrice: null, discountPercent: 0, stock: 14, avatar: '🍗', dayparts: ['lunch', 'night'], salesCount: 390, isPinned: true, enabled: true },
-        { id: 205, code: 'LN-05', name: 'Khasir (Mutton) Bhuna', catId: 'cat_meat', price: 380, origPrice: 420, discountPercent: 10, stock: 8, avatar: '🍖', dayparts: ['lunch', 'night'], salesCount: 280, hasModifiers: true, enabled: true },
-        { id: 206, code: 'LN-06', name: 'Plain Nazirshail Rice', catId: 'cat_rice', price: 40, origPrice: null, discountPercent: 0, stock: 120, avatar: '🍚', dayparts: ['lunch', 'night'], salesCount: 600, enabled: true },
-
-        // FRIDAY SPECIALS
-        { id: 301, code: 'FR-01', name: 'Old Dhaka Kacchi Biryani', catId: 'cat_rice', price: 340, origPrice: 380, discountPercent: 10, stock: 22, avatar: '🍛', dayparts: ['lunch', 'friday_lunch'], salesCount: 750, isPinned: true, hasModifiers: true, enabled: true },
-        { id: 302, code: 'FR-02', name: 'Chicken Roast & Polao', catId: 'cat_rice', price: 280, origPrice: null, discountPercent: 0, stock: 16, avatar: '🍗', dayparts: ['lunch', 'friday_lunch'], salesCount: 520, hasModifiers: true, enabled: true },
-        { id: 303, code: 'FR-03', name: 'Special Beef Tehari', catId: 'cat_rice', price: 220, origPrice: 260, discountPercent: 15, stock: 19, avatar: '🍲', dayparts: ['lunch', 'friday_lunch', 'night'], salesCount: 480, isPinned: true, hasModifiers: true, enabled: true },
-        { id: 304, code: 'FR-04', name: 'Chilled Borhani Glass', catId: 'cat_tea', price: 60, origPrice: null, discountPercent: 0, stock: 45, avatar: '🥛', dayparts: ['lunch', 'friday_lunch'], salesCount: 410, enabled: true },
-
-        // EVENING GRILL
-        { id: 401, code: 'EV-01', name: 'Full Chicken Grill', catId: 'cat_grill', price: 480, origPrice: 540, discountPercent: 11, stock: 6, avatar: '🍗', dayparts: ['evening'], salesCount: 310, isPinned: true, hasModifiers: true, enabled: true },
-        { id: 402, code: 'EV-02', name: 'Quarter Chicken Grill', catId: 'cat_grill', price: 130, origPrice: null, discountPercent: 0, stock: 0, avatar: '🍖', dayparts: ['evening'], salesCount: 460, enabled: true },
-        { id: 403, code: 'EV-03', name: 'Special Butter Naan', catId: 'cat_grill', price: 35, origPrice: null, discountPercent: 0, stock: 50, avatar: '🫓', dayparts: ['evening'], salesCount: 520, enabled: true },
-        { id: 404, code: 'EV-04', name: 'Beef Sheek Kebab', catId: 'cat_grill', price: 160, origPrice: 180, discountPercent: 11, stock: 12, avatar: '🍢', dayparts: ['evening'], salesCount: 270, isPinned: true, enabled: true },
-        { id: 405, code: 'EV-05', name: 'Chicken Shawarma Roll', catId: 'cat_snacks', price: 120, origPrice: null, discountPercent: 0, stock: 25, avatar: '🌯', dayparts: ['evening'], salesCount: 390, enabled: true },
-        { id: 406, code: 'EV-06', name: 'Crispy Fried Chicken (2pcs)', catId: 'cat_snacks', price: 180, origPrice: 200, discountPercent: 10, stock: 15, avatar: '🍗', dayparts: ['evening'], salesCount: 220, enabled: true },
-
-        // NIGHT DINNER
-        { id: 501, code: 'NT-01', name: 'Bhuna Khichuri & Beef', catId: 'cat_rice', price: 260, origPrice: null, discountPercent: 0, stock: 18, avatar: '🍲', dayparts: ['night'], salesCount: 380, isPinned: true, hasModifiers: true, enabled: true },
-        { id: 502, code: 'NT-02', name: 'Duck Bhuna (Haash)', catId: 'cat_meat', price: 350, origPrice: 380, discountPercent: 8, stock: 7, avatar: '🦆', dayparts: ['night'], salesCount: 190, enabled: true }
-    ]
-};
 
 // --- 2. GLOBAL STATE ---
 let state = {
@@ -281,13 +116,20 @@ function switchMainView(viewName) {
 
     document.getElementById('navBtnSales').classList.remove('active');
     document.getElementById('navBtnTables').classList.remove('active');
+    var navBtnSetup = document.getElementById('navBtnSetup');
+    if (navBtnSetup) navBtnSetup.classList.remove('active');
     document.getElementById('viewSales').classList.remove('active');
     document.getElementById('viewTables').classList.remove('active');
+    var viewSetup = document.getElementById('viewSetup');
+    if (viewSetup) viewSetup.classList.remove('active');
 
     if (viewName === 'sales') {
         document.getElementById('navBtnSales').classList.add('active');
         document.getElementById('viewSales').classList.add('active');
         renderPOS();
+    } else if (viewName === 'setup') {
+        if (navBtnSetup) navBtnSetup.classList.add('active');
+        if (viewSetup) viewSetup.classList.add('active');
     } else {
         document.getElementById('navBtnTables').classList.add('active');
         document.getElementById('viewTables').classList.add('active');
@@ -1228,11 +1070,30 @@ function processPayLater() {
         return;
     }
 
+    // --- INCREMENTAL KOT: Compute delta items ---
+    let existingOrder = RESTAURANT_DATA.openOrders.find(o => o.tableId === state.selectedTable && o.status === 'OPEN');
+    const previousCart = existingOrder ? existingOrder.cart : [];
+    const deltaItems = computeKOTDelta(previousCart, state.cart);
+
+    // Check if there are actual changes to send
+    if (existingOrder && deltaItems.length === 0) {
+        showToast('⚠️ No new items or changes to send to kitchen. All items already sent.');
+        return;
+    }
+
     deductStockForCartDiff();
 
-    let existingOrder = RESTAURANT_DATA.openOrders.find(o => o.tableId === state.selectedTable && o.status === 'OPEN');
+    // Save/update the order with printedQty tracking
+    const cartWithPrintedQty = state.cart.map(item => {
+        const prevItem = previousCart.find(p => p.key === item.key);
+        return {
+            ...item,
+            printedQty: item.qty // Mark current qty as printed
+        };
+    });
+
     if (existingOrder) {
-        existingOrder.cart = JSON.parse(JSON.stringify(state.cart));
+        existingOrder.cart = JSON.parse(JSON.stringify(cartWithPrintedQty));
         existingOrder.discountPercent = state.discountPercent;
     } else {
         RESTAURANT_DATA.openOrders.push({
@@ -1241,7 +1102,7 @@ function processPayLater() {
             tableName: tableObj.name,
             orderType: state.orderType,
             status: 'OPEN',
-            cart: JSON.parse(JSON.stringify(state.cart)),
+            cart: JSON.parse(JSON.stringify(cartWithPrintedQty)),
             discountPercent: state.discountPercent,
             vatPercent: state.vatPercent,
             createdAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
@@ -1250,11 +1111,68 @@ function processPayLater() {
 
     tableObj.status = 'OCCUPIED';
 
-    showToast(`🔥 Order saved for Table ${tableObj.name} (Pay Later). Stock updated!`);
+    const isFirstOrder = previousCart.length === 0;
+    showToast(isFirstOrder 
+        ? `🔥 Order saved for Table ${tableObj.name} (Pay Later). KOT sent!`
+        : `🔥 Updated order for Table ${tableObj.name}. New items sent to kitchen!`);
+    
+    // Print only delta items (new/changed items)
+    const deltaClone = JSON.parse(JSON.stringify(deltaItems));
+    const ticketTag = isFirstOrder ? 'KOT' : 'KOT - ADDITIONAL';
+    openPrintPrompt(() => {
+        printKOT(state.activeInvoiceId, deltaClone, state.selectedWarehouse || 'W1', { ticketTag: ticketTag });
+    });
+
     state.cart = [];
     state.originalOrderCart = [];
     renderPOS();
     if (state.currentMainView === 'tables') renderFloorLayoutSystem();
+}
+
+// Compute delta between previousCart (with printedQty) and currentCart
+function computeKOTDelta(previousCart, currentCart) {
+    const delta = [];
+
+    // 1. Find new items and increased quantities
+    currentCart.forEach(item => {
+        const prevItem = previousCart.find(p => p.key === item.key);
+        if (!prevItem) {
+            // Completely new item
+            delta.push({ ...item, isAddition: true });
+        } else {
+            const prevPrintedQty = prevItem.printedQty || prevItem.qty;
+            if (item.qty > prevPrintedQty) {
+                // Quantity increased - only send delta
+                delta.push({
+                    ...item,
+                    qty: item.qty - prevPrintedQty,
+                    isAddition: true
+                });
+            } else if (item.qty < prevPrintedQty) {
+                // Quantity decreased - send reduction notice
+                delta.push({
+                    ...item,
+                    qty: prevPrintedQty - item.qty,
+                    isReduction: true
+                });
+            }
+            // If qty === prevPrintedQty, no change needed
+        }
+    });
+
+    // 2. Find deleted items
+    previousCart.forEach(prevItem => {
+        const currentItem = currentCart.find(c => c.key === prevItem.key);
+        if (!currentItem) {
+            delta.push({
+                ...prevItem,
+                qty: prevItem.printedQty || prevItem.qty,
+                isDeleted: true
+            });
+        }
+    });
+
+    return delta;
 }
 
 function processPayment() {
@@ -1269,13 +1187,16 @@ function processPayment() {
     deductStockForCartDiff();
 
     const paidCart = state.cart.length > 0 ? state.cart : (openOrder ? openOrder.cart : []);
+    const invoiceId = state.activeInvoiceId;
+    const cartClone = JSON.parse(JSON.stringify(paidCart));
 
     if (openOrder) {
         openOrder.status = 'PAID';
         openOrder.cart = JSON.parse(JSON.stringify(paidCart));
-    } else if (state.cart.length > 0) {
+        openOrder.paidAt = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    } else if (paidCart.length > 0) {
         RESTAURANT_DATA.openOrders.push({
-            id: state.activeInvoiceId,
+            id: invoiceId,
             tableId: tableObj ? tableObj.id : 'counter',
             tableName: tableObj ? tableObj.name : 'Counter',
             orderType: state.orderType,
@@ -1283,7 +1204,8 @@ function processPayment() {
             cart: JSON.parse(JSON.stringify(paidCart)),
             discountPercent: state.discountPercent,
             vatPercent: state.vatPercent,
-            createdAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            createdAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            paidAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
         });
     }
 
@@ -1292,7 +1214,22 @@ function processPayment() {
     }
 
     showToast("✅ Payment completed! Invoice closed & stock updated.");
-    clearCart();
+
+    // Print Invoice Receipt + KOT tokens
+    openPrintPrompt(() => {
+        printInvoiceReceipt(invoiceId, cartClone, {});
+        printKOT(invoiceId, cartClone, state.selectedWarehouse || 'W1', {});
+    });
+
+    // Reset cart & table without cancelling the PAID order
+    state.cart = [];
+    state.originalOrderCart = [];
+    state.discountPercent = 0;
+    state.customDiscountAmount = 0;
+    state.activeInvoiceId = `INV-${Date.now().toString().slice(-6)}`;
+    const invNoEl = document.getElementById('invoiceNo');
+    if (invNoEl) invNoEl.textContent = state.activeInvoiceId;
+
     renderPOS();
     if (state.currentMainView === 'tables') renderFloorLayoutSystem();
 }
@@ -1369,6 +1306,15 @@ function cancelOrderFromSummary() {
     }
 }
 
+let currentHistoryFilter = 'ALL';
+
+function filterHistoryTab(filter, btn) {
+    currentHistoryFilter = filter;
+    document.querySelectorAll('.btn-history-tab').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    openHistoryModal();
+}
+
 function cancelOrderFromHistory(orderId) {
     cancelOrder(orderId);
     openHistoryModal();
@@ -1376,29 +1322,51 @@ function cancelOrderFromHistory(orderId) {
 
 function openHistoryModal() {
     const tbody = document.getElementById('historyTableBody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
-    if (RESTAURANT_DATA.openOrders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b;">No open invoices recorded</td></tr>`;
+    const filtered = RESTAURANT_DATA.openOrders.filter(o => {
+        if (currentHistoryFilter === 'OPEN') return o.status === 'OPEN';
+        if (currentHistoryFilter === 'PAID') return o.status === 'PAID';
+        if (currentHistoryFilter === 'CANCELLED') return o.status === 'CANCELLED';
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:24px;">No orders found for selected filter (${currentHistoryFilter})</td></tr>`;
     } else {
-        RESTAURANT_DATA.openOrders.forEach(o => {
+        filtered.forEach(o => {
             const sub = o.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-            const vat = (sub * 5) / 100;
+            const vat = (sub * (o.vatPercent || 5)) / 100;
             const payable = sub + vat;
 
             let actionBtns = '';
             if (o.status === 'OPEN') {
                 actionBtns = `
-                    <button class="btn-bo-control" onclick="reloadOpenOrderFromHistory('${o.id}')">
-                        ➕ Add Items / Settle
+                    <button class="btn-bo-control" onclick="reloadOpenOrderFromHistory('${o.id}')" title="Add items or process payment">
+                        ➕ Add / Settle
+                    </button>
+                    <button class="btn-bo-control" style="background:#fff7ed; color:#ea580c; border-color:#ffedd5; margin-left:4px;" onclick="reprintKOTFromHistory('${o.id}')" title="Reprint Kitchen Order Tickets">
+                        🔥 Reprint KOT
                     </button>
                     <button class="btn-bo-control danger" style="color: #ef4444; border-color: #fca5a5; margin-left: 4px;" onclick="cancelOrderFromHistory('${o.id}')">
-                        ❌ Cancel Order
+                        ❌ Cancel
+                    </button>
+                `;
+            } else if (o.status === 'PAID') {
+                actionBtns = `
+                    <button class="btn-bo-control" style="background:#f0fdf4; color:#16a34a; border-color:#bbf7d0;" onclick="reprintReceiptFromHistory('${o.id}')" title="Reprint Customer Invoice">
+                        🖨️ Reprint Invoice
+                    </button>
+                    <button class="btn-bo-control" style="background:#fff7ed; color:#ea580c; border-color:#ffedd5; margin-left:4px;" onclick="reprintKOTFromHistory('${o.id}')" title="Reprint Kitchen Order Tickets">
+                        🔥 Reprint KOT
                     </button>
                 `;
             } else {
-                actionBtns = `<span style="font-size:11px; color:#64748b;">Closed</span>`;
+                actionBtns = `<span style="font-size:11px; color:#94a3b8; font-weight: 600;">Cancelled Order</span>`;
             }
+
+            const statusClass = o.status === 'OPEN' ? 'low-stock' : (o.status === 'CANCELLED' ? 'out-of-stock' : 'in-stock');
 
             tbody.innerHTML += `
                 <tr>
@@ -1406,7 +1374,7 @@ function openHistoryModal() {
                     <td><span class="table-selector">${o.tableName}</span></td>
                     <td>${o.orderType}</td>
                     <td>${o.createdAt}</td>
-                    <td><span class="stock-badge ${o.status === 'OPEN' ? 'low-stock' : (o.status === 'CANCELLED' ? 'out-of-stock' : 'in-stock')}">${o.status}</span></td>
+                    <td><span class="stock-badge ${statusClass}">${o.status}</span></td>
                     <td><strong>৳${payable.toFixed(2)}</strong></td>
                     <td>${actionBtns}</td>
                 </tr>
@@ -1415,7 +1383,7 @@ function openHistoryModal() {
     }
 
     document.getElementById('historyModal').classList.add('active');
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
 function closeHistoryModal() {
@@ -1430,6 +1398,27 @@ function reloadOpenOrderFromHistory(orderId) {
         switchMainView('sales');
         showToast(`Reloaded invoice ${order.id} for ${order.tableName}`);
     }
+}
+
+// --- REPRINT FUNCTIONS ---
+function reprintReceiptFromHistory(orderId) {
+    const order = RESTAURANT_DATA.openOrders.find(o => o.id === orderId);
+    if (!order || !order.cart || order.cart.length === 0) {
+        showToast('❌ No items found for this order.');
+        return;
+    }
+    printInvoiceReceipt(orderId, order.cart, { isReprint: true });
+    showToast('🖨️ Reprinting invoice with DUPLICATE watermark...');
+}
+
+function reprintKOTFromHistory(orderId) {
+    const order = RESTAURANT_DATA.openOrders.find(o => o.id === orderId);
+    if (!order || !order.cart || order.cart.length === 0) {
+        showToast('❌ No items found for this order.');
+        return;
+    }
+    printKOT(orderId, order.cart, state.selectedWarehouse || 'W1', { isReprint: true });
+    showToast('🔥 Reprinting KOT tokens with DUPLICATE watermark...');
 }
 
 // --- 7. CART COMPUTATIONS ---
@@ -2200,11 +2189,24 @@ function openPaymentModal() {
         return;
     }
 
-    const payableText = document.getElementById('valPayable').textContent;
-    document.getElementById('payModalAmount').textContent = payableText;
-    document.getElementById('tenderInput').value = Math.ceil(parseFloat(payableText.replace('৳', '')));
-    calcChange();
+    // Calculate totals for modal display
+    const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const discountAmt = Math.round(subtotal * (state.discountPercent / 100));
+    const discountedTotal = subtotal - discountAmt;
+    const vatAmt = Math.round(discountedTotal * (state.vatPercent / 100));
+    const grandTotal = discountedTotal + vatAmt;
 
+    // Set the payable amount in modal
+    const payModalAmt = document.getElementById('payModalAmount');
+    if (payModalAmt) payModalAmt.textContent = `৳${grandTotal.toFixed(2)}`;
+
+    // Reset tender input and change
+    const tenderInput = document.getElementById('tenderInput');
+    if (tenderInput) tenderInput.value = '';
+    const changeVal = document.getElementById('changeVal');
+    if (changeVal) changeVal.textContent = '৳0.00';
+
+    // Show the modal
     document.getElementById('paymentModal').classList.add('active');
     lucide.createIcons();
 }
@@ -2246,7 +2248,8 @@ function sendToKOT() {
         showToast("Cart is empty!");
         return;
     }
-    showToast("🔥 KOT Order Ticket sent to Kitchen Printer!");
+    // sendToKOT is an alias for KOT & Pay Later flow
+    processPayLater();
 }
 
 function openHoldOrder() {
@@ -2379,4 +2382,379 @@ function saveEditFloor() {
     closeEditFloorModal();
     showToast(`Floor "${floor.name}" updated — Canvas: ${floor.width}×${floor.height}px`);
     renderFloorLayoutSystem();
+}
+
+
+// --- 10. PRINT ENGINE ---
+
+function openPrintPrompt(callback) {
+    if (window.confirm('Would you like to print?')) {
+        callback();
+    }
+}
+
+function getPrintPageWrapper(contentHtml, title = "Receipt") {
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>${title}</title>
+<style>
+    @page { 
+        size: 68mm auto; 
+        margin: 0; 
+    }
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    html {
+        background: #f1f5f9;
+        display: flex;
+        justify-content: center;
+        padding: 20px 0;
+    }
+    body {
+        width: 68mm;
+        max-width: 68mm;
+        margin: 0 auto;
+        padding: 10px;
+        background: #ffffff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 11px;
+        color: #000;
+        line-height: 1.3;
+    }
+    @media print {
+        html { 
+            background: #ffffff; 
+            padding: 0; 
+            display: block; 
+        }
+        body { 
+            box-shadow: none; 
+            padding: 2px 4px; 
+            width: 68mm; 
+            max-width: 68mm; 
+            margin: 0; 
+        }
+    }
+    .ticket-container {
+        width: 100%;
+        margin-bottom: 15px;
+        border-bottom: 2px dashed #000;
+        padding-bottom: 12px;
+        page-break-after: always;
+    }
+    .ticket-container:last-child {
+        border-bottom: none;
+        page-break-after: avoid;
+    }
+    .watermark-banner {
+        border: 2px solid #000;
+        background: #000;
+        color: #fff;
+        text-align: center;
+        font-weight: 900;
+        font-size: 11px;
+        padding: 4px 0;
+        margin-bottom: 6px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    .watermark-box-warning {
+        border: 1.5px dashed #000;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 900;
+        padding: 4px;
+        margin: 8px 0 4px 0;
+        text-transform: uppercase;
+    }
+    .header-brand {
+        text-align: center;
+        font-size: 14px;
+        font-weight: 900;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    .header-sub {
+        text-align: center;
+        font-size: 9px;
+        margin-bottom: 6px;
+    }
+    .table-banner {
+        background: #000;
+        color: #fff;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 900;
+        padding: 4px 0;
+        margin: 6px 0;
+        letter-spacing: 0.5px;
+    }
+    .ticket-type-badge {
+        text-align: center;
+        font-weight: 800;
+        font-size: 10px;
+        margin: 4px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .meta-line {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        margin: 2px 0;
+    }
+    .divider {
+        border-top: 1px dashed #000;
+        margin: 6px 0;
+    }
+    table.items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+    }
+    table.items-table th {
+        font-size: 10px;
+        text-transform: uppercase;
+        border-bottom: 1px solid #000;
+        padding: 3px 0;
+        text-align: left;
+    }
+    table.items-table td {
+        padding: 4px 0;
+        border-bottom: 1px dotted #aaa;
+        font-size: 11px;
+        vertical-align: top;
+    }
+    .col-qty { width: 35px; text-align: right; font-weight: bold; }
+    .col-price { width: 50px; text-align: right; }
+    .col-total { width: 55px; text-align: right; font-weight: bold; }
+    .item-title { font-weight: bold; }
+    .item-badge-new { font-size: 9px; background: #000; color: #fff; padding: 1px 3px; border-radius: 2px; margin-left: 4px; }
+    .totals-table {
+        width: 100%;
+        margin-top: 6px;
+        font-size: 11px;
+    }
+    .totals-table td { padding: 2px 0; }
+    .grand-total-row td {
+        border-top: 1px solid #000;
+        border-bottom: 2px double #000;
+        font-weight: 900;
+        font-size: 12px;
+        padding: 4px 0;
+    }
+    .footer-msg {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 10px;
+    }
+</style>
+</head>
+<body>
+${contentHtml}
+</body>
+</html>`;
+}
+
+function openPrintDialog(htmlContent) {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+        }, 500);
+    } else {
+        alert('Popup blocked! Please allow popups for printing.');
+    }
+}
+
+// 1. PRINT CUSTOMER INVOICE RECEIPT ONLY
+function printInvoiceReceipt(orderId, items, options = {}) {
+    if (!items || items.length === 0) return;
+    
+    let tableNumber = "Counter";
+    let order = RESTAURANT_DATA.openOrders.find(o => o.id === orderId);
+    if (order) {
+        tableNumber = order.tableName || "Counter";
+    } else if (state.selectedTable) {
+        const tableObj = RESTAURANT_DATA.tables.find(t => t.id === state.selectedTable);
+        if (tableObj) tableNumber = tableObj.name;
+    }
+
+    const isReprint = options.isReprint || false;
+    const invoiceHtml = generateInvoiceHTML(orderId, items, tableNumber, isReprint);
+    const fullPageHtml = getPrintPageWrapper(invoiceHtml, `Invoice - ${orderId}`);
+    openPrintDialog(fullPageHtml);
+}
+
+// 2. PRINT KITCHEN ORDER TICKETS (KOT) ONLY
+function printKOT(orderId, items, warehouseId, options = {}) {
+    if (!items || items.length === 0) return;
+    
+    let tableNumber = "Counter";
+    let order = RESTAURANT_DATA.openOrders.find(o => o.id === orderId);
+    if (order) {
+        tableNumber = order.tableName || "Counter";
+    } else if (state.selectedTable) {
+        const tableObj = RESTAURANT_DATA.tables.find(t => t.id === state.selectedTable);
+        if (tableObj) tableNumber = tableObj.name;
+    }
+    
+    const bucketA = [];
+    const bucketsB = {};
+    const bucketC = [];
+    
+    items.forEach(item => {
+        let p = RESTAURANT_DATA.products.find(prod => prod.id === item.productId);
+        if (!p) p = item; 
+
+        if (!p.is_kitchen) {
+            bucketA.push(item);
+        } else {
+            const mapping = RESTAURANT_DATA.kitchenItemMappings.find(m => m.warehouseId === warehouseId && m.itemId === p.id);
+            if (mapping) {
+                const k = RESTAURANT_DATA.kitchens.find(k => k.id === mapping.kitchenId);
+                if (k && k.status === 'Active') {
+                    if (!bucketsB[k.id]) bucketsB[k.id] = { kitchenId: k.id, kitchenName: k.name, items: [] };
+                    bucketsB[k.id].items.push(item);
+                } else {
+                    bucketC.push(item); 
+                }
+            } else {
+                bucketC.push(item); 
+            }
+        }
+    });
+    
+    const isReprint = options.isReprint || false;
+    const targetKitchenId = options.targetKitchenId || null;
+    const ticketTag = options.ticketTag || (isReprint ? 'DUPLICATE / REPRINT' : 'KOT');
+    
+    let ticketsHtml = '';
+    
+    if ((!targetKitchenId || targetKitchenId === 'counter') && bucketA.length > 0) {
+        ticketsHtml += generateTicketHTML(orderId, 'KOT - COUNTER / BAR', bucketA, tableNumber, ticketTag, isReprint);
+    }
+    
+    Object.values(bucketsB).forEach(b => {
+        if ((!targetKitchenId || targetKitchenId === String(b.kitchenId)) && b.items.length > 0) {
+            ticketsHtml += generateTicketHTML(orderId, 'KOT - ' + b.kitchenName, b.items, tableNumber, ticketTag, isReprint);
+        }
+    });
+    
+    if ((!targetKitchenId || targetKitchenId === 'unmapped') && bucketC.length > 0) {
+        ticketsHtml += generateTicketHTML(orderId, 'KOT - UNMAPPED KITCHEN ITEMS', bucketC, tableNumber, ticketTag, isReprint);
+    }
+    
+    if (!ticketsHtml) return;
+    const fullPageHtml = getPrintPageWrapper(ticketsHtml, `KOT - ${orderId}`);
+    openPrintDialog(fullPageHtml);
+}
+
+function generateInvoiceHTML(orderId, items, tableNumber, isReprint = false) {
+    let subtotal = 0;
+    const nowStr = new Date().toLocaleString();
+    
+    let html = `<div class="ticket-container">
+        ${isReprint ? '<div class="watermark-banner">★ DUPLICATE RECEIPT COPY ★</div>' : ''}
+        <div class="header-brand">MANAGERIUM RESTAURANT</div>
+        <div class="header-sub">Dhanmondi Warehouse • Dhaka, Bangladesh<br>Phone: +880 1700-000000</div>
+        ${isReprint ? '<div class="ticket-type-badge">*** REPRINT INVOICE ***</div>' : ''}
+        <div class="table-banner">TABLE: ${tableNumber.toUpperCase()}</div>
+        <div class="meta-line"><span>Invoice: <strong>${orderId}</strong></span><span>Date: ${nowStr}</span></div>
+        <div class="divider"></div>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Item Description</th>
+                    <th class="col-qty">Qty</th>
+                    <th class="col-price">Price</th>
+                    <th class="col-total">Total</th>
+                </tr>
+            </thead>
+            <tbody>`;
+            
+    items.forEach(item => {
+        const itemTotal = item.qty * item.price;
+        subtotal += itemTotal;
+        html += `<tr>
+            <td><span class="item-title">${item.name}</span></td>
+            <td class="col-qty">${item.qty}</td>
+            <td class="col-price">৳${item.price}</td>
+            <td class="col-total">৳${itemTotal.toFixed(2)}</td>
+        </tr>`;
+    });
+    
+    const discountAmt = Math.round(subtotal * (state.discountPercent / 100));
+    const discountedTotal = subtotal - discountAmt;
+    const vatAmt = Math.round(discountedTotal * (state.vatPercent / 100));
+    const grandTotal = discountedTotal + vatAmt;
+
+    html += `</tbody></table>
+        <div class="divider"></div>
+        <table class="totals-table">
+            <tr><td>Subtotal:</td><td style="text-align:right;">৳${subtotal.toFixed(2)}</td></tr>`;
+            
+    if (discountAmt > 0) {
+        html += `<tr><td>Discount (${state.discountPercent}%):</td><td style="text-align:right;">-৳${discountAmt.toFixed(2)}</td></tr>`;
+    }
+            
+    html += `<tr><td>SD & VAT (${state.vatPercent}%):</td><td style="text-align:right;">৳${vatAmt.toFixed(2)}</td></tr>
+            <tr class="grand-total-row"><td>PAYABLE TOTAL:</td><td style="text-align:right;">৳${grandTotal.toFixed(2)}</td></tr>
+        </table>
+        ${isReprint ? '<div class="watermark-box-warning">[ DUPLICATE RECEIPT COPY ]</div>' : ''}
+        <div class="footer-msg">*** THANK YOU FOR DINING WITH US ***<br>Please Visit Again!</div>
+    </div>`;
+    return html;
+}
+
+function generateTicketHTML(orderId, title, items, tableNumber, ticketTag = 'KOT', isReprint = false) {
+    const nowStr = new Date().toLocaleString();
+    let totalQty = items.reduce((sum, i) => sum + i.qty, 0);
+
+    let html = `<div class="ticket-container">
+        ${isReprint ? '<div class="watermark-banner">★ DUPLICATE COPY ★</div>' : ''}
+        <div class="header-brand">${title}</div>
+        <div class="ticket-type-badge">*** ${ticketTag.toUpperCase()} ***</div>
+        <div class="table-banner">TABLE: ${tableNumber.toUpperCase()}</div>
+        <div class="meta-line"><span>Order: <strong>${orderId}</strong></span><span>Time: ${nowStr}</span></div>
+        <div class="divider"></div>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Item Description</th>
+                    <th class="col-qty">QTY</th>
+                </tr>
+            </thead>
+            <tbody>`;
+            
+    items.forEach(item => {
+        let badgeHtml = '';
+        if (item.isAddition) {
+            badgeHtml = ` <span class="item-badge-new">+NEW</span>`;
+        } else if (item.isReduction || item.isDeleted) {
+            badgeHtml = ` <span class="item-badge-new" style="background:#dc2626;">-CANCELLED</span>`;
+        }
+
+        const qtyDisplay = (item.isReduction || item.isDeleted) ? `-${item.qty}` : `${item.qty}`;
+        html += `<tr>
+            <td><span class="item-title">[ ${qtyDisplay}x ] ${item.name}</span>${badgeHtml}</td>
+            <td class="col-qty" style="font-size: 14px; ${item.isReduction || item.isDeleted ? 'color:#dc2626;' : ''}">${qtyDisplay}</td>
+        </tr>`;
+    });
+    
+    html += `</tbody></table>
+        <div class="divider"></div>
+        <div class="meta-line"><span>Total Items: <strong>${items.length}</strong></span><span>Total Qty: <strong>${totalQty}</strong></span></div>
+        ${isReprint ? '<div class="watermark-box-warning">[ DUPLICATE TOKEN COPY ]</div>' : ''}
+    </div>`;
+    return html;
 }
